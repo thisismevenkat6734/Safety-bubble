@@ -1,0 +1,15 @@
+{
+  "name": "Safety Bubble",
+  "short_name": "SafetyBubble",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#7c3aed",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2913/2913989.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
