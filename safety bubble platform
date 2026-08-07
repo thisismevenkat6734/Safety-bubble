@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Bubble - Women's Safety Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7c3aed">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .dark .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .sos-pulse {
+            animation: pulse-ring 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 via-pink-50 to-rose-100 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-900 text-gray-800 dark:text-gray-100 h-full overflow-hidden flex flex-col">
+
+    <!-- Global Notification Modal / Toast -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Auth View (Hidden if Logged In) -->
+    <div id="auth-view" class="fixed inset-0 z-40 bg-purple-900/40 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-pink-500/20 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-purple-600/20 rounded-full blur-2xl"></div>
+            
+            <div class="text-center mb-8 relative z-10">
+                <div class="w-16 h-16 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-2xl mx-auto flex items-center justify-center text-white text-3xl shadow-lg shadow-purple-500/30 mb-4">
+                    <i class="fa-solid fa-shield-heart"></i>
+                </div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">Safety Bubble</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Enterprise Women's Safety & Security Platform</p>
+            </div>
+
+            <!-- Phone Auth Step 1: Enter Phone -->
+            <div id="auth-phone-step" class="space-y-4 relative z-10">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Mobile Number</label>
+                    <div class="flex gap-2">
+                        <select id="country-code" class="glass-panel px-3 py-3 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="+91">+91 (IN)</option>
+                            <option value="+1">+1 (US)</option>
+                            <option value="+44">+44 (UK)</option>
+                            <option value="+61">+61 (AU)</option>
+                        </select>
+                        <input type="tel" id="phone-input" placeholder="9876543210" class="glass-panel flex-1 px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+                <button onclick="window.AuthModule.sendOTP()" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 transition transform active:scale-98">
+                    Send Verification OTP
+                </button>
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+                    <span class="flex-shrink mx-4 text-xs text-gray-400 uppercase tracking-widest">or sandbox mode</span>
+                    <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+                </div>
+                <button onclick="window.AuthModule.bypassDemoLogin()" class="w-full py-3 glass-panel border border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-medium rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition text-sm">
+                    <i class="fa-solid fa-bolt mr-2"></i> Quick Demo Login
+                </button>
+            </div>
+
+            <!-- Phone Auth Step 2: Verify OTP -->
+            <div id="auth-otp-step" class="space-y-4 relative z-10 hidden">
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Enter the 6-digit verification code sent to <span id="sent-phone-display" class="font-semibold text-purple-600"></span></p>
+                </div>
+                <div>
+                    <input type="text" id="otp-input" maxlength="6" placeholder="123456" class="glass-panel w-full px-4 py-3.5 rounded-xl text-center text-2xl tracking-widest font-bold focus:outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <button onclick="window.AuthModule.verifyOTP()" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 transition">
+                    Verify & Enter Bubble
+                </button>
+                <button onclick="window.AuthModule.backToPhoneStep()" class="w-full py-2 text-xs text-gray-500 hover:text-purple-600 transition">
+                    Change Mobile Number
+                </button>
+            </div>
+            
+            <div id="recaptcha-container"></div>
+        </div>
+    </div>
+
+    <!-- Main App Container (Flex Row: Sidebar + Content) -->
+    <div id="main-app" class="flex-1 flex overflow-hidden hidden">
+        
+        <!-- Desktop / Tablet Sidebar Navigation -->
+        <aside class="w-64 glass-panel border-r border-white/20 dark:border-gray-800/60 hidden md:flex flex-col justify-between p-4 z-20">
+            <div>
+                <!-- App Brand -->
+                <div class="flex items-center gap-3 px-2 py-3 mb-6">
+                    <div class="w-10 h-10 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-xl flex items-center justify-center text-white text-xl shadow-md shadow-purple-500/30">
+                        <i class="fa-solid fa-shield-heart"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-base leading-tight bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">Safety Bubble</h2>
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Enterprise v2.6</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-1.5">
+                    <button onclick="window.NavigationModule.switchTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-purple-700 bg-purple-100/70 dark:bg-purple-900/40 dark:text-purple-300 shadow-sm" data-tab="dashboard">
+                        <i class="fa-solid fa-house-chimney w-5"></i> Dashboard
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('map')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-800/50" data-tab="map">
+                        <i class="fa-solid fa-map-location-dot w-5"></i> Live Map & Safe Zones
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('sos')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20" data-tab="sos">
+                        <i class="fa-solid fa-triangle-exclamation w-5"></i> SOS Emergency
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('contacts')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-800/50" data-tab="contacts">
+                        <i class="fa-solid fa-address-book w-5"></i> Trusted Contacts
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('journey')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-800/50" data-tab="journey">
+                        <i class="fa-solid fa-route w-5"></i> Safe Journey
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('timeline')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-800/50" data-tab="timeline">
+                        <i class="fa-solid fa-timeline w-5"></i> Activity Timeline
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('volunteer')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-800/50" data-tab="volunteer">
+                        <i class="fa-solid fa-hands-holding-child w-5"></i> Volunteer Network
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('device')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-800/50" data-tab="device">
+                        <i class="fa-solid fa-microchip w-5"></i> BLE Smart Device
+                    </button>
+                    <button onclick="window.NavigationModule.switchTab('settings')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-800/50" data-tab="settings">
+                        <i class="fa-solid fa-gear w-5"></i> Settings
+                    </button>
+                </nav>
+            </div>
+
+            <!-- User Footer Widget -->
+            <div class="pt-4 border-t border-white/20 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div id="sidebar-user-avatar" class="w-9 h-9 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm shrink-0">W</div>
+                        <div class="truncate">
+                            <h4 id="sidebar-user-name" class="text-xs font-bold truncate">User Profile</h4>
+                            <p id="sidebar-user-phone" class="text-[10px] text-gray-500 truncate">+91 9876543210</p>
+                        </div>
+                    </div>
+                    <button onclick="window.AuthModule.logout()" title="Logout" class="p-2 text-gray-500 hover:text-rose-600 transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+            
+            <!-- Top Mobile & Desktop Header -->
+            <header class="glass-panel border-b border-white/20 dark:border-gray-800/60 px-4 py-3 flex items-center justify-between z-10 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="md:hidden w-8 h-8 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-lg flex items-center justify-center text-white text-sm shadow">
+                        <i class="fa-solid fa-shield-heart"></i>
+                    </div>
+                    <div>
+                        <h2 id="current-page-title" class="text-base font-bold text-purple-900 dark:text-purple-200">Safety Dashboard</h2>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 hidden sm:block">Protected by AES-256 Cloud Security & Realtime AI Guardian</p>
+                    </div>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="flex items-center gap-3">
+                    <!-- Voice AI Wake Word Indicator -->
+                    <button onclick="window.VoiceAIModule.toggleListening()" id="voice-ai-indicator" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-medium border border-purple-300 dark:border-purple-700 transition shadow-sm">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" id="voice-status-dot"></span>
+                        <span id="voice-status-text">Voice AI Active</span>
+                    </button>
+
+                    <!-- Quick SOS Trigger in Header -->
+                    <button onclick="window.SOSModule.triggerSOS()" class="px-4 py-1.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold text-xs rounded-full shadow-md shadow-rose-500/30 hover:scale-105 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-bell"></i> SOS EMERGENCY
+                    </button>
+
+                    <!-- Profile Quick Button (Mobile) -->
+                    <button onclick="window.NavigationModule.switchTab('settings')" class="md:hidden w-8 h-8 rounded-full bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 flex items-center justify-center font-bold text-xs">
+                        <span id="mobile-user-initial">W</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic App Viewport (Tabs Container) -->
+            <div id="app-viewport" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 pb-24 md:pb-6 relative">
+
+                <!-- 1. DASHBOARD TAB -->
+                <section id="tab-dashboard" class="space-y-6 max-w-7xl mx-auto">
+                    <!-- Safety Status Banner -->
+                    <div class="glass-panel p-6 rounded-3xl bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-purple-700/10 border-purple-200 dark:border-purple-900 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="space-y-2 text-center md:text-left">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                                <i class="fa-solid fa-shield-check"></i> All Safety Systems Fully Operational
+                            </div>
+                            <h3 class="text-2xl md:text-3xl font-extrabold tracking-tight">You are in a <span class="text-purple-600 dark:text-purple-400">Secure Bubble</span></h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 max-w-xl">Live GPS active, 4 trusted contacts on standby, and AI acoustic monitoring is listening for emergency keywords.</p>
+                        </div>
+                        <div class="flex items-center gap-4 bg-white/60 dark:bg-gray-900/60 p-4 rounded-2xl border border-white/40 shadow-sm shrink-0">
+                            <div class="relative w-20 h-20 flex items-center justify-center">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="40" cy="40" r="34" stroke="currentColor" stroke-width="6" class="text-gray-200 dark:text-gray-800 fill-none"></circle>
+                                    <circle cx="40" cy="40" r="34" stroke="currentColor" stroke-width="6" class="text-purple-600 fill-none stroke-dasharray-[213] stroke-dashoffset-[20]"></circle>
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                    <span class="text-xl font-extrabold text-purple-700 dark:text-purple-300" id="safety-score-val">98</span>
+                                    <span class="text-[9px] uppercase font-semibold text-gray-400">Score</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Safety Index</span>
+                                <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400">Optimal Protection</h4>
+                                <p class="text-[11px] text-gray-500">Updated 1 min ago</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grid Quick Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="glass-panel p-4 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition">
+                            <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Trusted Contacts</span>
+                                <h4 class="text-xl font-bold" id="dash-contacts-count">4 Active</h4>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition">
+                            <div class="w-12 h-12 rounded-xl bg-pink-500/10 text-pink-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-location-crosshairs"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Nearby Safe Places</span>
+                                <h4 class="text-xl font-bold">12 Places</h4>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-hands-holding-child"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Volunteers Nearby</span>
+                                <h4 class="text-xl font-bold">28 Ready</h4>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition">
+                            <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-microchip"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Smart BLE Device</span>
+                                <h4 class="text-xl font-bold text-emerald-600">Connected</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center Dashboard Grid: Daily Motivation & Live Weather / Quick Actions -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Daily Motivation & Summary -->
+                        <div class="glass-panel p-6 rounded-3xl space-y-4 md:col-span-2 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full text-xs font-semibold">Daily Empowerment & Wisdom</span>
+                                    <span class="text-xs text-gray-400" id="current-date-display">Today</span>
+                                </div>
+                                <blockquote class="text-lg md:text-xl font-medium italic text-gray-700 dark:text-gray-200">
+                                    "Courage isn't having the strength to go on - it is going on when you don't have strength."
+                                </blockquote>
+                                <p class="text-xs text-purple-600 dark:text-purple-400 mt-2 font-semibold">— Theodore Roosevelt</p>
+                            </div>
+                            <div class="pt-4 border-t border-gray-200/50 dark:border-gray-800 grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <span class="text-[11px] text-gray-400 block">Weather Safety</span>
+                                    <span class="text-sm font-bold text-gray-700 dark:text-gray-200"><i class="fa-solid fa-cloud-sun text-amber-500 mr-1"></i> 28°C Clear</span>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] text-gray-400 block">Area Risk Index</span>
+                                    <span class="text-sm font-bold text-emerald-600">Very Low Risk</span>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] text-gray-400 block">GPS Precision</span>
+                                    <span class="text-sm font-bold text-purple-600">± 3 Meters</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Emergency SOS Trigger Card -->
+                        <div class="glass-panel p-6 rounded-3xl bg-gradient-to-br from-rose-500/10 to-pink-600/10 border-rose-200 dark:border-rose-900 flex flex-col items-center justify-center text-center">
+                            <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-rose-600 to-pink-600 text-white flex items-center justify-center text-3xl shadow-lg shadow-rose-500/40 sos-pulse mb-4 cursor-pointer" onclick="window.SOSModule.triggerSOS()">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-rose-700 dark:text-rose-400">Emergency SOS</h4>
+                            <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 mb-4">Tap to instantly alert trusted contacts, nearby volunteers & emergency services.</p>
+                            <button onclick="window.SOSModule.triggerSOS()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md transition">
+                                Launch SOS Mode
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Stream -->
+                    <div class="glass-panel p-6 rounded-3xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-bold text-base">Recent Security Activity</h4>
+                            <button onclick="window.NavigationModule.switchTab('timeline')" class="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline">View All Timeline</button>
+                        </div>
+                        <div id="dash-recent-timeline" class="space-y-3">
+                            <!-- Populated dynamically -->
+                            <div class="p-3 rounded-xl bg-white/50 dark:bg-gray-800/40 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-shield-check"></i></div>
+                                    <div>
+                                        <h5 class="font-semibold">Safe Bubble initialized</h5>
+                                        <p class="text-[10px] text-gray-400">GPS location synchronized successfully</p>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] text-gray-400">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. LIVE MAP TAB -->
+                <section id="tab-map" class="space-y-4 h-full flex flex-col hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
+                        <div>
+                            <h3 class="text-xl font-bold">Live Map & Safe Zones</h3>
+                            <p class="text-xs text-gray-500">Real-time GPS tracking with nearby police stations, hospitals, and verified volunteers.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="window.MapModule.filterMap('all')" class="px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-medium shadow">All</button>
+                            <button onclick="window.MapModule.filterMap('police')" class="px-3 py-1.5 rounded-xl glass-panel text-xs font-medium hover:bg-purple-50">Police</button>
+                            <button onclick="window.MapModule.filterMap('hospital')" class="px-3 py-1.5 rounded-xl glass-panel text-xs font-medium hover:bg-purple-50">Hospitals</button>
+                            <button onclick="window.MapModule.filterMap('volunteer')" class="px-3 py-1.5 rounded-xl glass-panel text-xs font-medium hover:bg-purple-50">Volunteers</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-h-[450px] rounded-3xl overflow-hidden glass-panel border border-white/40 shadow-lg relative">
+                        <div id="leaflet-map" class="w-full h-full z-10"></div>
+                    </div>
+                </section>
+
+                <!-- 3. SOS SYSTEM TAB -->
+                <section id="tab-sos" class="space-y-6 max-w-4xl mx-auto hidden">
+                    <div class="glass-panel p-8 rounded-3xl text-center relative overflow-hidden bg-gradient-to-b from-rose-500/10 to-transparent border-rose-300 dark:border-rose-900">
+                        <div class="w-32 h-32 rounded-full bg-gradient-to-tr from-rose-600 to-pink-600 text-white flex items-center justify-center text-5xl shadow-xl shadow-rose-500/50 sos-pulse mx-auto mb-6 cursor-pointer" onclick="window.SOSModule.triggerSOS()">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-rose-700 dark:text-rose-400 mb-2">Emergency SOS Command Center</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 max-w-lg mx-auto mb-6">Pressing the SOS button instantly initiates emergency protocols: broadcasts live GPS coordinates via SMS, emails trusted contacts, alerts nearby safety volunteers, and logs the event to Firestore.</p>
+                        
+                        <div class="flex flex-wrap justify-center gap-4">
+                            <button onclick="window.SOSModule.triggerSOS()" class="px-8 py-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-2xl shadow-lg shadow-rose-600/40 text-base transition transform active:scale-95">
+                                <i class="fa-solid fa-bell mr-2"></i> ACTIVATE FULL SOS NOW
+                            </button>
+                            <button onclick="window.SOSModule.cancelSOS()" class="px-6 py-4 glass-panel border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-sm">
+                                Cancel / False Alarm
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active SOS Status Panel -->
+                    <div id="active-sos-panel" class="glass-panel p-6 rounded-3xl hidden border-rose-500 shadow-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 rounded-full bg-rose-600 animate-ping"></span>
+                                <h4 class="font-bold text-rose-600 text-lg">ACTIVE SOS TRANSMISSION IN PROGRESS</h4>
+                            </div>
+                            <span id="sos-timer-display" class="px-3 py-1 bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-mono font-bold rounded-xl text-sm">00:00</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                            <div class="p-3 rounded-xl bg-white/60 dark:bg-gray-800/60">
+                                <span class="text-gray-400 block mb-1">Trusted Contacts Notified</span>
+                                <span class="font-bold text-sm text-emerald-600" id="sos-contacts-notified">4 Contacts</span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white/60 dark:bg-gray-800/60">
+                                <span class="text-gray-400 block mb-1">Volunteers Dispatched</span>
+                                <span class="font-bold text-sm text-purple-600" id="sos-volunteers-dispatched">6 Nearby Volunteers</span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white/60 dark:bg-gray-800/60">
+                                <span class="text-gray-400 block mb-1">SMS / WhatsApp Broadcast</span>
+                                <span class="font-bold text-sm text-emerald-600">Successfully Sent</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Past SOS Logs -->
+                    <div class="glass-panel p-6 rounded-3xl">
+                        <h4 class="font-bold text-base mb-4">SOS Emergency History</h4>
+                        <div id="sos-history-list" class="space-y-3">
+                            <p class="text-xs text-gray-400">No previous emergency events recorded.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. TRUSTED CONTACTS TAB -->
+                <section id="tab-contacts" class="space-y-6 max-w-4xl mx-auto hidden">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold">Trusted Emergency Contacts</h3>
+                            <p class="text-xs text-gray-500">People who will automatically receive your live location and SOS alerts.</p>
+                        </div>
+                        <button onclick="window.ContactsModule.openAddModal()" class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl text-xs shadow-md shadow-purple-500/20 hover:scale-105 transition">
+                            <i class="fa-solid fa-user-plus mr-1.5"></i> Add Contact
+                        </button>
+                    </div>
+
+                    <div id="contacts-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Populated dynamically from Firestore -->
+                    </div>
+                </section>
+
+                <!-- 5. SAFE JOURNEY TAB -->
+                <section id="tab-journey" class="space-y-6 max-w-4xl mx-auto hidden">
+                    <div class="glass-panel p-6 rounded-3xl">
+                        <h3 class="text-xl font-bold mb-1">Safe Journey Companion</h3>
+                        <p class="text-xs text-gray-500 mb-6">Set your destination and ETA. If you don't arrive or check-in on time, an automatic alert is triggered.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Destination Name / Address</label>
+                                <input type="text" id="journey-dest-input" placeholder="e.g. Jubilee Hills, Hyderabad" class="glass-panel w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Estimated Travel Time (Minutes)</label>
+                                <input type="number" id="journey-eta-input" value="30" class="glass-panel w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+                        <button onclick="window.JourneyModule.startJourney()" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/20 hover:opacity-95 transition">
+                            Start Safe Journey Tracker
+                        </button>
+                    </div>
+
+                    <!-- Active Journey Status Card -->
+                    <div id="active-journey-card" class="glass-panel p-6 rounded-3xl hidden border-purple-500 shadow-lg">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full text-xs font-semibold">Journey Active</span>
+                                <h4 id="active-dest-title" class="text-lg font-bold mt-1">Destination</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs text-gray-400 block">Time Remaining</span>
+                                <span id="journey-countdown" class="text-xl font-mono font-bold text-purple-600">30:00</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="window.JourneyModule.completeJourney()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs shadow transition">
+                                I Have Arrived Safely
+                            </button>
+                            <button onclick="window.JourneyModule.cancelJourney()" class="px-6 py-3 glass-panel border border-rose-300 text-rose-600 font-semibold rounded-xl text-xs hover:bg-rose-50 transition">
+                                Cancel Journey
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. TIMELINE TAB -->
+                <section id="tab-timeline" class="space-y-6 max-w-4xl mx-auto hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-xl font-bold">Activity Timeline & Audit Log</h3>
+                            <p class="text-xs text-gray-500">Tamper-proof record of logins, locations, SOS triggers, and security events.</p>
+                        </div>
+                        <button onclick="window.TimelineModule.exportPDF()" class="px-4 py-2 glass-panel border border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-semibold rounded-xl text-xs hover:bg-purple-50 transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-pdf"></i> Export PDF Report
+                        </button>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-3xl">
+                        <div id="timeline-list" class="space-y-4">
+                            <!-- Populated dynamically -->
+                            <p class="text-xs text-gray-400 text-center py-4">Loading timeline events...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. VOLUNTEER SYSTEM TAB -->
+                <section id="tab-volunteer" class="space-y-6 max-w-4xl mx-auto hidden">
+                    <div class="glass-panel p-6 rounded-3xl bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-purple-200">
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full text-xs font-semibold">Community Safety Network</span>
+                                <h3 class="text-2xl font-bold mt-2">Join as Verified Safety Volunteer</h3>
+                                <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 max-w-lg">Help women in your neighborhood during emergencies. All volunteers undergo secure background verification.</p>
+                            </div>
+                            <button onclick="window.VolunteerModule.registerVolunteer()" id="volunteer-register-btn" class="px-6 py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl shadow-lg text-xs shrink-0 hover:scale-105 transition">
+                                Register as Volunteer
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-3xl">
+                        <h4 class="font-bold text-base mb-4">Nearby Emergency Assistance Requests</h4>
+                        <div id="volunteer-requests-list" class="space-y-3">
+                            <div class="p-4 rounded-2xl bg-white/50 dark:bg-gray-800/40 flex items-center justify-between text-xs">
+                                <div>
+                                    <h5 class="font-bold text-sm text-gray-800 dark:text-gray-200">No active emergency requests in your 2km radius.</h5>
+                                    <p class="text-gray-400 mt-0.5">Your status is set to Ready & Available.</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-semibold">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 8. SMART SAFETY DEVICE TAB -->
+                <section id="tab-device" class="space-y-6 max-w-4xl mx-auto hidden">
+                    <div class="glass-panel p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-full text-xs font-semibold">BLE Wearable Integration</span>
+                            <h3 class="text-2xl font-bold mt-2">Safety Bubble BLE Ring / Pendant</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 max-w-md">Connect your bluetooth wearable button for instant tactile emergency triggering without unlocking your phone.</p>
+                        </div>
+                        <button onclick="window.DeviceModule.scanDevice()" class="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg text-xs shrink-0 transition">
+                            <i class="fa-solid fa-bluetooth mr-2"></i> Scan & Connect BLE Device
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="glass-panel p-5 rounded-2xl text-center">
+                            <span class="text-xs text-gray-400 uppercase font-semibold">Device Battery</span>
+                            <h4 class="text-2xl font-extrabold text-emerald-600 mt-1">88%</h4>
+                            <span class="text-[10px] text-gray-500">CR2032 Coin Cell</span>
+                        </div>
+                        <div class="glass-panel p-5 rounded-2xl text-center">
+                            <span class="text-xs text-gray-400 uppercase font-semibold">Signal Strength</span>
+                            <h4 class="text-2xl font-extrabold text-purple-600 mt-1">-54 dBm</h4>
+                            <span class="text-[10px] text-gray-500">Excellent Range</span>
+                        </div>
+                        <div class="glass-panel p-5 rounded-2xl text-center">
+                            <span class="text-xs text-gray-400 uppercase font-semibold">Fall Detection AI</span>
+                            <h4 class="text-2xl font-extrabold text-emerald-600 mt-1">Armed</h4>
+                            <span class="text-[10px] text-gray-500">6-Axis Accelerometer</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 9. SETTINGS TAB -->
+                <section id="tab-settings" class="space-y-6 max-w-4xl mx-auto hidden">
+                    <div class="glass-panel p-6 rounded-3xl space-y-6">
+                        <h3 class="text-xl font-bold">Account & Platform Settings</h3>
+                        
+                        <!-- Profile Edit -->
+                        <div class="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+                            <h4 class="font-semibold text-sm text-purple-600 dark:text-purple-400">User Profile Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1">Full Name</label>
+                                    <input type="text" id="profile-name-input" class="glass-panel w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1">Emergency Medical Notes / Blood Group</label>
+                                    <input type="text" id="profile-medical-input" placeholder="e.g. O+ve, Penicillin Allergy" class="glass-panel w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+                            <button onclick="window.SettingsModule.saveProfile()" class="px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-xl text-xs shadow hover:bg-purple-700 transition">
+                                Save Profile Changes
+                            </button>
+                        </div>
+
+                        <!-- Preferences -->
+                        <div class="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+                            <h4 class="font-semibold text-sm text-purple-600 dark:text-purple-400">Safety Preferences & Notifications</h4>
+                            <div class="space-y-3">
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Continuous Voice AI Wake-Word Monitoring</span>
+                                    <input type="checkbox" id="pref-voice-ai" checked class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                                </label>
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Automatic SMS GPS Broadcast on SOS</span>
+                                    <input type="checkbox" id="pref-sms" checked class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                                </label>
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Dark Glassmorphism Theme</span>
+                                    <input type="checkbox" id="pref-darkmode" onchange="window.SettingsModule.toggleDarkMode(this.checked)" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                            <button onclick="window.AuthModule.logout()" class="px-5 py-2.5 bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-semibold rounded-xl text-xs hover:bg-rose-200 transition">
+                                <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Logout Safety Bubble
+                            </button>
+                            <span class="text-[11px] text-gray-400">Safety Bubble v2.6 Enterprise Edition</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Mobile Bottom Navigation Bar -->
+            <nav class="md:hidden glass-panel border-t border-white/20 dark:border-gray-800 px-2 py-2 flex items-center justify-around z-20 shrink-0">
+                <button onclick="window.NavigationModule.switchTab('dashboard')" class="mobile-nav-btn flex flex-col items-center p-1 text-purple-700 dark:text-purple-300" data-tab="dashboard">
+                    <i class="fa-solid fa-house-chimney text-base"></i>
+                    <span class="text-[10px] mt-0.5">Home</span>
+                </button>
+                <button onclick="window.NavigationModule.switchTab('map')" class="mobile-nav-btn flex flex-col items-center p-1 text-gray-500 hover:text-purple-600" data-tab="map">
+                    <i class="fa-solid fa-map-location-dot text-base"></i>
+                    <span class="text-[10px] mt-0.5">Map</span>
+                </button>
+                <button onclick="window.NavigationModule.switchTab('sos')" class="flex flex-col items-center p-1 text-rose-600 font-bold scale-110">
+                    <div class="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-500/50">
+                        <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                    </div>
+                </button>
+                <button onclick="window.NavigationModule.switchTab('contacts')" class="mobile-nav-btn flex flex-col items-center p-1 text-gray-500 hover:text-purple-600" data-tab="contacts">
+                    <i class="fa-solid fa-address-book text-base"></i>
+                    <span class="text-[10px] mt-0.5">Contacts</span>
+                </button>
+                <button onclick="window.NavigationModule.switchTab('settings')" class="mobile-nav-btn flex flex-col items-center p-1 text-gray-500 hover:text-purple-600" data-tab="settings">
+                    <i class="fa-solid fa-gear text-base"></i>
+                    <span class="text-[10px] mt-0.5">Settings</span>
+                </button>
+            </nav>
+        </main>
+    </div>
+
+    <!-- Modal for Adding Trusted Contact -->
+    <div id="contact-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-md p-6 rounded-3xl shadow-2xl space-y-4">
+            <h3 class="text-lg font-bold" id="contact-modal-title">Add Trusted Contact</h3>
+            <input type="hidden" id="contact-edit-id">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Contact Name</label>
+                <input type="text" id="modal-contact-name" placeholder="e.g. Mom / Sister" class="glass-panel w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Mobile Number (with Country Code)</label>
+                <input type="tel" id="modal-contact-phone" placeholder="+919876543210" class="glass-panel w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Relationship</label>
+                <input type="text" id="modal-contact-relation" placeholder="Family / Friend / Guardian" class="glass-panel w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="modal-contact-primary" class="w-4 h-4 text-purple-600 rounded">
+                <label class="text-xs font-medium text-gray-700 dark:text-gray-300">Set as Primary Emergency Contact</label>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="window.ContactsModule.saveContact()" class="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl text-xs shadow">Save Contact</button>
+                <button onclick="window.ContactsModule.closeModal()" class="px-5 py-3 glass-panel border border-gray-300 text-gray-600 font-semibold rounded-xl text-xs">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Application Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
+
