@@ -1,0 +1,8 @@
+safety-bubble/
+├── index.html              # Single Page Application entry point & UI shell
+├── style.css               # Glassmorphism custom styles & animations
+├── app.js                  # Modular JavaScript (Auth, Maps, SOS, Contacts, Timeline, Voice AI)
+├── manifest.json           # PWA Manifest configuration
+├── service-worker.js       # Offline caching & PWA service worker
+├── firestore.rules         # Enterprise secure Firestore security rules
+└── folder_structure.md     # Project architecture and scaling documentation
